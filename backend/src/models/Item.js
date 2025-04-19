@@ -9,16 +9,35 @@ const itemSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['plastic', 'paper', 'glass', 'metal', 'electronics', 'other']
+    enum: ['plastic', 'tin', 'paper', 'glass', 'electronics', 'other']
   },
   points: {
     type: Number,
     required: true,
-    default: 10
+    default: function() {
+      // Set points based on item type
+      switch(this.type) {
+        case 'plastic':
+          return 2;
+        case 'tin':
+          return 1;
+        case 'paper':
+          return 1;
+        case 'glass':
+          return 1;
+        case 'electronics':
+          return 3;
+        default:
+          return 1;
+      }
+    }
   },
   qrCode: {
     type: String,
     required: true
+  },
+  qrCodeImage: {
+    type: String
   },
   isUsed: {
     type: Boolean,

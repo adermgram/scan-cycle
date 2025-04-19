@@ -48,7 +48,8 @@ router.post('/register', async (req, res) => {
         name: user.name,
         username: user.username,
         aadhaar: user.aadhaar,
-        points: user.points
+        points: user.points,
+        isAdmin: user.isAdmin
       }
     });
   } catch (error) {
@@ -87,7 +88,8 @@ router.post('/login', async (req, res) => {
         name: user.name,
         username: user.username,
         aadhaar: user.aadhaar,
-        points: user.points
+        points: user.points,
+        isAdmin: user.isAdmin
       }
     });
   } catch (error) {

@@ -1,25 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import Scanner from './pages/Scanner';
+import AdminPage from './pages/AdminPage';
+import { API_BASE_URL, getAuthHeader } from './config/api';
 import './App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    // Check if user is authenticated and get admin status
+    const token = localStorage.getItem('token');
+    if (token) {
+      setIsAuthenticated(true);
+      // Fetch user profile to check admin status
+      fetch(`${API_BASE_URL}/api/users/profile`, {
+        headers: {
+          ...getAuthHeader()
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        setIsAdmin(data.isAdmin || false);
+      })
+      .catch(err => {
+        console.error('Error fetching user profile:', err);
+        localStorage.removeItem('token');
+        setIsAuthenticated(false);
+        setIsAdmin(false);
+      });
+    }
+  }, []);
+
+  const handleLoginSuccess = (adminStatus) => {
+    setIsAuthenticated(true);
+    setIsAdmin(adminStatus);
+  };
 
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        {isAuthenticated && <Navbar />}
+        {isAuthenticated && <Navbar isAdmin={isAdmin} />}
         <div className={`${isAuthenticated ? 'pt-16' : ''}`}>
           <Routes>
             <Route 
               path="/" 
               element={
                 !isAuthenticated ? (
-                  <Auth onLoginSuccess={() => setIsAuthenticated(true)} />
+                  <Auth onLoginSuccess={handleLoginSuccess} />
                 ) : (
                   <Navigate to="/dashboard" />
                 )
@@ -32,6 +64,16 @@ function App() {
             <Route
               path="/scanner"
               element={isAuthenticated ? <Scanner /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/admin"
+              element={
+                isAuthenticated && isAdmin ? (
+                  <AdminPage />
+                ) : (
+                  <Navigate to="/dashboard" />
+                )
+              }
             />
           </Routes>
         </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-const Navbar = () => {
+const Navbar = ({ isAdmin }) => {
   const location = useLocation();
 
   const isActive = (path) => {
@@ -32,6 +32,28 @@ const Navbar = () => {
             >
               Dashboard
             </Link>
+            <Link
+              to="/scanner"
+              className={`text-sm font-medium transition-colors ${
+                isActive('/scanner')
+                  ? 'text-emerald-500'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Scanner
+            </Link>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className={`text-sm font-medium transition-colors ${
+                  isActive('/admin')
+                    ? 'text-emerald-500'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Admin
+              </Link>
+            )}
           </div>
         </div>
       </div>

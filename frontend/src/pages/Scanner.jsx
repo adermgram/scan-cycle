@@ -2,21 +2,35 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import { QrReader } from 'react-qr-reader';
+import { API_BASE_URL, getAuthHeader } from '../config/api';
 
 const Scanner = () => {
   const [scannedItems, setScannedItems] = useState([]);
   const containerRef = useRef(null);
   const navigate = useNavigate();
 
-  const handleScan = useCallback((result) => {
+  const handleScan = useCallback(async (result) => {
     if (result) {
       try {
-        const data = JSON.parse(result?.text || '{}');
+        const response = await fetch(`${API_BASE_URL}/api/items/validate-qr`, {
+          method: 'POST',
+          headers: {
+            ...getAuthHeader(),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ qrData: result.text })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to validate QR code');
+        }
+
+        const data = await response.json();
         const mockItem = {
           id: Date.now(),
-          type: data.type || 'Plastic Bottle',
+          type: data.itemType || 'Plastic Bottle',
           points: data.points || 10,
-          image: data.image || '/bottle-icon.svg'
+          image: '/bottle-icon.svg'
         };
         
         setScannedItems(prev => [...prev, mockItem]);
@@ -94,8 +108,16 @@ const Scanner = () => {
               </div>
             )}
             {scannedItems.map((item, index) => (
-              <div key={item.id} className="absolute text-white text-sm">
-                {item.type} (+{item.points} points)
+              <div
+                key={item.id}
+                className="absolute bottom-4 left-4 flex items-center space-x-2 bg-white/20 backdrop-blur-lg rounded-lg px-3 py-2"
+                style={{ left: `${index * 120}px` }}
+              >
+                <img src={item.image} alt={item.type} className="w-8 h-8" />
+                <div className="text-white">
+                  <div className="text-sm font-medium">{item.type}</div>
+                  <div className="text-xs opacity-75">+{item.points} points</div>
+                </div>
               </div>
             ))}
           </div>

@@ -1,43 +1,70 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 const QRCode = require('qrcode');
 const Item = require('../models/Item');
 const User = require('../models/User');
+const fs = require('fs').promises;
+const path = require('path');
 
-// Generate QR code for a new recyclable item
-router.post('/generate-qr', auth, async (req, res) => {
+// Points configuration for different item types
+const ITEM_POINTS = {
+  plastic: 2,
+  tin: 3,
+  paper: 1,
+  glass: 4,
+  electronics: 5,
+  other: 1
+};
+
+// Generate QR code for a new recyclable item (admin only)
+router.post('/generate-qr', auth, admin, async (req, res) => {
   try {
     const { type } = req.body;
     
-    // Create a unique item ID
-    const itemId = Date.now().toString() + Math.random().toString(36).substring(2, 8);
+    if (!type) {
+      return res.status(400).json({ message: 'Item type is required' });
+    }
+
+    // Generate a unique item ID using timestamp and random string
+    const itemId = Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
     
-    // Create QR code data
-    const qrData = JSON.stringify({
-      itemId,
-      timestamp: new Date().toISOString()
+    // Create a more concise QR code data structure
+    const qrData = {
+      id: itemId,
+      t: type,
+      p: ITEM_POINTS[type] || 0
+    };
+
+    // Convert to a compact string format
+    const qrString = `${qrData.id}|${qrData.t}|${qrData.p}`;
+    
+    // Generate QR code
+    const qrCode = await QRCode.toDataURL(qrString, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: 300
     });
-    
-    // Generate QR code as data URL
-    const qrCodeDataUrl = await QRCode.toDataURL(qrData);
-    
-    // Create new item in database
-    const item = new Item({
-      itemId,
-      type,
-      qrCode: qrData
-    });
-    
-    await item.save();
-    
+
+    // Ensure the uploads/qrcodes directory exists
+    const uploadsDir = path.join(__dirname, '../../uploads/qrcodes');
+    await fs.mkdir(uploadsDir, { recursive: true });
+
+    // Save QR code as PNG
+    const qrBuffer = Buffer.from(qrCode.split(',')[1], 'base64');
+    const qrPath = path.join(uploadsDir, `${itemId}.png`);
+    await fs.writeFile(qrPath, qrBuffer);
+
     res.json({
       itemId,
-      qrCode: qrCodeDataUrl,
-      type
+      type,
+      points: ITEM_POINTS[type] || 0,
+      qrCode: qrString // Send the compact string instead of the full data URL
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error generating QR code', error: error.message });
+    console.error('Error generating QR code:', error);
+    res.status(500).json({ message: 'Error generating QR code' });
   }
 });
 
@@ -45,6 +72,10 @@ router.post('/generate-qr', auth, async (req, res) => {
 router.post('/validate-qr', auth, async (req, res) => {
   try {
     const { qrData } = req.body;
+    
+    if (!qrData) {
+      return res.status(400).json({ message: 'QR data is required' });
+    }
     
     // Parse QR data
     const qrDataObj = JSON.parse(qrData);
@@ -82,6 +113,7 @@ router.post('/validate-qr', auth, async (req, res) => {
     
     res.json({
       valid: true,
+      itemType: item.type,
       points: item.points,
       totalPoints: req.user.points,
       message: 'Item recycled successfully',
@@ -93,9 +125,8 @@ router.post('/validate-qr', auth, async (req, res) => {
 });
 
 // Get all recyclable items (admin only)
-router.get('/', auth, async (req, res) => {
+router.get('/', [auth, admin], async (req, res) => {
   try {
-    // In a real app, you would check if the user is an admin
     const items = await Item.find({})
       .sort({ createdAt: -1 })
       .limit(100);
@@ -103,6 +134,21 @@ router.get('/', auth, async (req, res) => {
     res.json({ items });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching items', error: error.message });
+  }
+});
+
+// Get item by ID
+router.get('/:itemId', auth, async (req, res) => {
+  try {
+    const item = await Item.findOne({ itemId: req.params.itemId });
+    
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+    
+    res.json({ item });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching item', error: error.message });
   }
 });
 

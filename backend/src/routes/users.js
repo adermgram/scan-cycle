@@ -13,6 +13,7 @@ router.get('/profile', auth, async (req, res) => {
       username: req.user.username,
       aadhaar: req.user.aadhaar,
       points: req.user.points,
+      isAdmin: req.user.isAdmin,
       recycledItems: req.user.recycledItems,
       coupons: req.user.coupons
     });

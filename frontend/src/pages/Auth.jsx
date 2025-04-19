@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { API_BASE_URL } from '../config/api';
 
 const slides = [
   {
@@ -129,10 +130,10 @@ const Auth = ({ onLoginSuccess }) => {
             password: formData.password,
           };
 
-      console.log('Attempting to connect to:', `http://localhost:5000${endpoint}`);
+      console.log('Attempting to connect to:', `${API_BASE_URL}${endpoint}`);
       console.log('Request body:', body);
 
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,8 +153,8 @@ const Auth = ({ onLoginSuccess }) => {
       // Store the token
       localStorage.setItem('token', data.token);
       
-      // Call the success callback
-      onLoginSuccess();
+      // Call the success callback with admin status
+      onLoginSuccess(data.user.isAdmin);
       
       // Navigate to dashboard
       navigate('/dashboard');

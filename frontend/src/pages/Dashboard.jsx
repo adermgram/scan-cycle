@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import DashboardScanner from '../components/DashboardScanner';
 import QRCode from 'qrcode';
 import { FaQrcode, FaTrophy } from 'react-icons/fa';
+import { API_BASE_URL, getAuthHeader } from '../config/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -27,9 +28,9 @@ const Dashboard = () => {
         }
 
         // Fetch user profile
-        const profileResponse = await fetch('http://localhost:5000/api/users/profile', {
+        const profileResponse = await fetch(`${API_BASE_URL}/api/users/profile`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            ...getAuthHeader()
           }
         });
 
@@ -44,11 +45,11 @@ const Dashboard = () => {
         // Using 10 points as maximum (100% full)
         const calculatedFillLevel = Math.min((profileData.points / 10) * 100, 100);
         setFillLevel(calculatedFillLevel);
-
+        
         // Fetch leaderboard
-        const leaderboardResponse = await fetch('http://localhost:5000/api/leaderboard/global', {
+        const leaderboardResponse = await fetch(`${API_BASE_URL}/api/leaderboard/global`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            ...getAuthHeader()
           }
         });
         
@@ -77,11 +78,10 @@ const Dashboard = () => {
   // Function to handle scan completion
   const handleScanComplete = async (data) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/items/validate-qr', {
+      const response = await fetch(`${API_BASE_URL}/api/items/validate-qr`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          ...getAuthHeader(),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ qrData: data })
@@ -92,9 +92,9 @@ const Dashboard = () => {
       }
 
       // Refresh user data to update points
-      const profileResponse = await fetch('http://localhost:5000/api/users/profile', {
+      const profileResponse = await fetch(`${API_BASE_URL}/api/users/profile`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          ...getAuthHeader()
         }
       });
 
@@ -123,11 +123,11 @@ const Dashboard = () => {
   // Function to generate test QR code
   const generateTestQR = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/items/generate-qr', {
+      const response = await fetch(`${API_BASE_URL}/api/items/generate-qr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          ...getAuthHeader()
         },
         body: JSON.stringify({ type: 'plastic' })
       });

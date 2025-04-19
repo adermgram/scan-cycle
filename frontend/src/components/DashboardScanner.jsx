@@ -23,7 +23,7 @@ const DashboardScanner = ({ onScanComplete }) => {
         <QrReader
           onResult={handleScan}
           constraints={{
-            facingMode: 'environment'
+            facingMode: ''
           }}
           className="w-full h-full"
           videoStyle={{ objectFit: 'cover' }}

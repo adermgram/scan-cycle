@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 const authRoutes = require('./routes/auth');
 const itemRoutes = require('./routes/items');
 const userRoutes = require('./routes/users');
@@ -18,6 +19,9 @@ app.use(cors({
 // Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from the public directory
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -49,7 +53,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = 5000; // Fixed port instead of using environment variable
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 }); 

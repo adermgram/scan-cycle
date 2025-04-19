@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 6
   },
+  isAdmin: {
+    type: Boolean,
+    default: false
+  },
   points: {
     type: Number,
     default: 0
