@@ -18,49 +18,37 @@ const ITEM_POINTS = {
   other: 1
 };
 
-// Generate QR code for a new recyclable item (admin only)
-router.post('/generate-qr', auth, admin, async (req, res) => {
+// Generate QR code for a new recyclable item
+router.post('/generate-qr', auth, async (req, res) => {
   try {
-    const { type } = req.body;
+    const { type = 'plastic' } = req.body;
     
-    if (!type) {
-      return res.status(400).json({ message: 'Item type is required' });
-    }
+    // Set points based on item type
+    const points = ITEM_POINTS[type] || 1;
 
-    // Generate a unique item ID using timestamp and random string
-    const itemId = Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+    // Generate a test item ID
+    const itemId = 'test-' + Date.now();
     
-    // Create a more concise QR code data structure
-    const qrData = {
-      id: itemId,
-      t: type,
-      p: ITEM_POINTS[type] || 0
-    };
-
-    // Convert to a compact string format
-    const qrString = `${qrData.id}|${qrData.t}|${qrData.p}`;
+    // Create a simple QR code data string in the format "itemId|type|points"
+    const qrString = `${itemId}|${type}|${points}`;
     
-    // Generate QR code
-    const qrCode = await QRCode.toDataURL(qrString, {
-      errorCorrectionLevel: 'M',
+    // Generate QR code data URL
+    const qrDataUrl = await QRCode.toDataURL(qrString, {
+      errorCorrectionLevel: 'H',
       margin: 1,
-      width: 300
+      width: 300,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
     });
-
-    // Ensure the uploads/qrcodes directory exists
-    const uploadsDir = path.join(__dirname, '../../uploads/qrcodes');
-    await fs.mkdir(uploadsDir, { recursive: true });
-
-    // Save QR code as PNG
-    const qrBuffer = Buffer.from(qrCode.split(',')[1], 'base64');
-    const qrPath = path.join(uploadsDir, `${itemId}.png`);
-    await fs.writeFile(qrPath, qrBuffer);
 
     res.json({
       itemId,
       type,
-      points: ITEM_POINTS[type] || 0,
-      qrCode: qrString // Send the compact string instead of the full data URL
+      points,
+      qrCode: qrString,
+      qrDataUrl: qrDataUrl  // Send the full data URL for direct image display
     });
   } catch (error) {
     console.error('Error generating QR code:', error);
@@ -71,55 +59,122 @@ router.post('/generate-qr', auth, admin, async (req, res) => {
 // Validate a scanned QR code
 router.post('/validate-qr', auth, async (req, res) => {
   try {
-    const { qrData } = req.body;
+    console.log('Received QR validation request:', req.body);
     
-    if (!qrData) {
-      return res.status(400).json({ message: 'QR data is required' });
+    const { itemId, type, points } = req.body;
+    
+    if (!itemId || !type || !points) {
+      return res.status(400).json({ message: 'Invalid QR code data: Missing required fields' });
     }
     
-    // Parse QR data
-    const qrDataObj = JSON.parse(qrData);
-    const { itemId } = qrDataObj;
+    // Check for test QR codes (ones with itemId starting with 'test-')
+    if (itemId.startsWith('test-')) {
+      // Check if this test QR code has been used before
+      const existingItem = await Item.findOne({ itemId });
+      
+      if (existingItem && existingItem.isUsed) {
+        return res.status(400).json({ 
+          message: 'This item has already been recycled',
+          isUsed: true,
+          usedAt: existingItem.usedAt,
+          usedBy: existingItem.usedBy
+        });
+      }
+      
+      // Create or update the test item
+      let testItem;
+      if (existingItem) {
+        testItem = existingItem;
+      } else {
+        testItem = new Item({
+          itemId,
+          type,
+          points: parseInt(points),
+          qrCode: `${itemId}|${type}|${points}`,
+          isUsed: false
+        });
+        await testItem.save();
+      }
+      
+      // Mark the item as used
+      testItem.isUsed = true;
+      testItem.usedBy = req.user._id;
+      testItem.usedAt = new Date();
+      await testItem.save();
+      
+      // Award points to the user
+      const user = await User.findById(req.user._id);
+      user.points += parseInt(points);
+      await user.save();
+      
+      return res.json({
+        valid: true,
+        itemType: type,
+        points: parseInt(points),
+        totalPoints: user.points,
+        message: 'Item recycled successfully'
+      });
+    }
     
-    // Find item in database
-    const item = await Item.findOne({ itemId });
+    // For regular QR codes (non-test ones)
+    let item = await Item.findOne({ itemId });
     
     if (!item) {
-      return res.status(404).json({ message: 'Item not found' });
+      // Create new item if it doesn't exist
+      item = new Item({
+        itemId,
+        type,
+        points: parseInt(points),
+        qrCode: `${itemId}|${type}|${points}`,
+        isUsed: false
+      });
+      await item.save();
     }
     
+    // Check if item has already been used
     if (item.isUsed) {
-      return res.status(400).json({ message: 'Item has already been recycled' });
+      // Get information about who used it and when
+      let usedByInfo = "someone else";
+      if (item.usedBy && item.usedBy.equals(req.user._id)) {
+        usedByInfo = "you";
+      }
+      
+      const usedTime = item.usedAt ? 
+        `on ${item.usedAt.toLocaleDateString()} at ${item.usedAt.toLocaleTimeString()}` : 
+        "previously";
+      
+      return res.status(400).json({ 
+        message: `This item has already been recycled by ${usedByInfo} ${usedTime}`,
+        isUsed: true,
+        usedAt: item.usedAt,
+        usedBy: item.usedBy
+      });
     }
     
     // Mark item as used
-    await item.markAsUsed(req.user._id);
+    item.isUsed = true;
+    item.usedBy = req.user._id;
+    item.usedAt = new Date();
+    await item.save();
     
     // Update user points
-    req.user.points += item.points;
-    req.user.recycledItems.push(item._id);
-    await req.user.save();
-    
-    // Check if user has reached a points threshold for a coupon
-    // This is a placeholder implementation
-    let coupon = null;
-    if (req.user.points >= 100 && req.user.points % 100 === 0) {
-      // In a real app, you would create a coupon here
-      coupon = {
-        message: 'Congratulations! You\'ve earned a reward coupon!',
-        points: req.user.points
-      };
+    const user = await User.findById(req.user._id);
+    user.points += item.points;
+    if (!user.recycledItems) {
+      user.recycledItems = [];
     }
+    user.recycledItems.push(item._id);
+    await user.save();
     
     res.json({
       valid: true,
       itemType: item.type,
       points: item.points,
-      totalPoints: req.user.points,
-      message: 'Item recycled successfully',
-      coupon
+      totalPoints: user.points,
+      message: 'Item recycled successfully'
     });
   } catch (error) {
+    console.error('Error validating QR code:', error);
     res.status(500).json({ message: 'Error validating QR code', error: error.message });
   }
 });

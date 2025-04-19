@@ -2,9 +2,8 @@ import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
 const QRGenerator = ({ data }) => {
-  // If data is a string, use it directly
-  // If data is an object, convert it to a compact string
-  const qrData = typeof data === 'string' ? data : JSON.stringify(data);
+  // Format the QR data as itemId|type|points
+  const qrData = typeof data === 'string' ? data : `${data.itemId}|${data.type}|${data.points}`;
 
   const handleDownload = () => {
     const svg = document.querySelector('svg');
@@ -20,7 +19,7 @@ const QRGenerator = ({ data }) => {
       ctx.drawImage(img, 0, 0);
       const pngFile = canvas.toDataURL('image/png');
       const downloadLink = document.createElement('a');
-      downloadLink.download = 'qr-code.png';
+      downloadLink.download = `qr-${data.itemId || 'code'}.png`;
       downloadLink.href = pngFile;
       downloadLink.click();
     };

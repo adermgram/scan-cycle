@@ -3,9 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Navbar from './components/Navbar';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
-import Scanner from './pages/Scanner';
 import AdminPage from './pages/AdminPage';
 import { API_BASE_URL, getAuthHeader } from './config/api';
+import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 function App() {
@@ -62,10 +62,6 @@ function App() {
               element={isAuthenticated ? <Dashboard /> : <Navigate to="/" />}
             />
             <Route
-              path="/scanner"
-              element={isAuthenticated ? <Scanner /> : <Navigate to="/" />}
-            />
-            <Route
               path="/admin"
               element={
                 isAuthenticated && isAdmin ? (
@@ -77,6 +73,7 @@ function App() {
             />
           </Routes>
         </div>
+        <Toaster position="top-right" />
       </div>
     </Router>
   );

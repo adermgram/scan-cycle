@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardScanner from '../components/DashboardScanner';
 import QRCode from 'qrcode';
-import { FaQrcode, FaTrophy } from 'react-icons/fa';
+import { FaQrcode, FaTrophy, FaTimes, FaDownload } from 'react-icons/fa';
 import { API_BASE_URL, getAuthHeader } from '../config/api';
+import { toast } from 'react-hot-toast';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ const Dashboard = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
   const [testQR, setTestQR] = useState(null);
+  const [qrInfo, setQrInfo] = useState(null);
+  const canvasRef = useRef(null);
 
   // Fetch user profile and leaderboard data
   useEffect(() => {
@@ -78,18 +81,41 @@ const Dashboard = () => {
   // Function to handle scan completion
   const handleScanComplete = async (data) => {
     try {
+      console.log('QR data to send:', data);
+      
+      // Send the raw QR code string directly
       const response = await fetch(`${API_BASE_URL}/api/items/validate-qr`, {
         method: 'POST',
         headers: {
           ...getAuthHeader(),
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ qrData: data })
+        body: JSON.stringify({ 
+          itemId: data.itemId,
+          type: data.type,
+          points: data.points
+        })
       });
 
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to validate QR code');
+        // Handle specific error for already recycled items
+        if (responseData.isUsed) {
+          toast.error(responseData.message, {
+            icon: '🔄',
+            duration: 4000
+          });
+        } else {
+          throw new Error(responseData.message || 'Failed to validate QR code');
+        }
+        return;
       }
+
+      // Handle successful scan
+      toast.success(`Item recycled successfully! +${responseData.points} points`, {
+        icon: '♻️'
+      });
 
       // Refresh user data to update points
       const profileResponse = await fetch(`${API_BASE_URL}/api/users/profile`, {
@@ -109,6 +135,7 @@ const Dashboard = () => {
       setShowScanner(false);
     } catch (error) {
       console.error('Error validating QR code:', error);
+      toast.error(error.message || 'Error validating QR code');
     }
   };
 
@@ -118,6 +145,61 @@ const Dashboard = () => {
       setShowScanner(false);
     }
     setShowFullLeaderboard(!showFullLeaderboard);
+  };
+
+  // Function to generate QR code on canvas
+  const renderQRCodeToCanvas = (text) => {
+    if (!canvasRef.current) return;
+    
+    QRCode.toCanvas(
+      canvasRef.current, 
+      text,
+      { 
+        width: 300,
+        margin: 4,
+        errorCorrectionLevel: 'H',
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      },
+      (error) => {
+        if (error) {
+          console.error('Error rendering QR code to canvas:', error);
+        }
+      }
+    );
+  };
+
+  // Function to properly download the QR code
+  const handleDownloadQR = () => {
+    try {
+      // Make sure the canvas has the latest QR code
+      if (qrInfo && canvasRef.current) {
+        const qrString = `${qrInfo.itemId}|${qrInfo.type}|${qrInfo.points}`;
+        renderQRCodeToCanvas(qrString);
+        
+        // Convert canvas to data URL and download
+        const dataUrl = canvasRef.current.toDataURL('image/png');
+        
+        // Create a temporary link for download
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `recyclable-qr-${qrInfo.type}-${Date.now()}.png`;
+        
+        // Append to body, click and remove
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast.success('QR code downloaded successfully!');
+      } else {
+        toast.error('Unable to download QR code. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error downloading QR code:', error);
+      toast.error('Failed to download QR code');
+    }
   };
 
   // Function to generate test QR code
@@ -133,11 +215,24 @@ const Dashboard = () => {
       });
       const data = await response.json();
       
-      // Generate QR code
-      const qrCodeDataUrl = await QRCode.toDataURL(data.qrCode);
-      setTestQR(qrCodeDataUrl);
+      // Use the data URL for display
+      setTestQR(data.qrDataUrl);
+      
+      // Store QR info for display and canvas rendering
+      const newQrInfo = {
+        itemId: data.itemId,
+        type: data.type,
+        points: data.points
+      };
+      setQrInfo(newQrInfo);
+      
+      // Render QR code to canvas (for download)
+      renderQRCodeToCanvas(data.qrCode);
+      
+      toast.success(`QR code generated: ${data.type} (${data.points} points)`);
     } catch (err) {
-      setError('Failed to generate QR code');
+      console.error('Error generating QR code:', err);
+      toast.error('Failed to generate QR code');
     }
   };
 
@@ -224,11 +319,20 @@ const Dashboard = () => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setShowScanner(true)}
-              className="bg-emerald-500 text-white rounded-xl p-4 shadow-lg flex items-center justify-center space-x-2 hover:bg-emerald-600 transition-colors"
+              onClick={() => setShowScanner(!showScanner)}
+              className={`${showScanner ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white rounded-xl p-4 shadow-lg flex items-center justify-center space-x-2 transition-colors`}
             >
-              <FaQrcode className="h-6 w-6" />
-              <span>Scan QR</span>
+              {showScanner ? (
+                <>
+                  <FaTimes className="h-6 w-6" />
+                  <span>Close Scanner</span>
+                </>
+              ) : (
+                <>
+                  <FaQrcode className="h-6 w-6" />
+                  <span>Scan QR</span>
+                </>
+              )}
             </motion.button>
 
             <motion.button
@@ -252,7 +356,7 @@ const Dashboard = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="bg-white rounded-2xl overflow-hidden"
+                className="bg-white rounded-2xl overflow-hidden shadow-lg"
               >
                 <DashboardScanner onScanComplete={handleScanComplete} />
               </motion.div>
@@ -271,7 +375,7 @@ const Dashboard = () => {
                 <div className="space-y-4 max-h-[500px] overflow-y-auto">
                   {leaderboard.slice(0, showFullLeaderboard ? undefined : 5).map((user, index) => (
                     <motion.div
-                      key={user.username}
+                      key={user._id || index}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
@@ -279,10 +383,10 @@ const Dashboard = () => {
                     >
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-2xl">
-                          {index === 0 ? '��' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🌟'}
+                          {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🌟'}
                         </div>
                         <div>
-                          <p className="font-medium">{user.name || user.username}</p>
+                          <p className="font-medium text-black">{user.name || user.username}</p>
                           <p className="text-sm text-gray-500">{user.points} points</p>
                         </div>
                       </div>
@@ -297,20 +401,49 @@ const Dashboard = () => {
           </AnimatePresence>
 
           {/* Test QR Code Section */}
-          {testQR && (
+          {!showScanner && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="mt-6 bg-white rounded-2xl p-6 shadow-lg"
             >
-              <h3 className="text-lg font-semibold mb-4">Test QR Code</h3>
+              <h3 className="text-lg font-semibold mb-4">Generate Test QR Code</h3>
               <div className="flex flex-col items-center">
-                <img src={testQR} alt="Test QR Code" className="w-48 h-48" />
+                {/* Hidden canvas for QR code generation and download */}
+                <canvas ref={canvasRef} className="hidden" width="300" height="300"></canvas>
+                
+                {testQR && (
+                  <>
+                    <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+                      <img src={testQR} alt="Test QR Code" className="w-64 h-64" />
+                    </div>
+                    
+                    {qrInfo && (
+                      <div className="bg-gray-50 p-3 rounded-lg mb-4 w-full text-center">
+                        <p className="text-sm text-gray-700">ID: <span className="font-mono">{qrInfo.itemId}</span></p>
+                        <p className="text-sm text-gray-700">Type: <span className="font-medium text-emerald-600">{qrInfo.type}</span></p>
+                        <p className="text-sm text-gray-700">Points: <span className="font-bold">{qrInfo.points}</span></p>
+                        <div className="mt-2 text-xs bg-amber-50 p-2 rounded border border-amber-200 text-amber-800">
+                          <span className="font-medium">⚠️ One-Time Use Only:</span> This QR code can only be recycled once.
+                        </div>
+                      </div>
+                    )}
+                    
+                    <button 
+                      onClick={handleDownloadQR}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-4 flex items-center space-x-2"
+                    >
+                      <FaDownload className="h-4 w-4" />
+                      <span>Download QR Code</span>
+                    </button>
+                  </>
+                )}
+                
                 <button
                   onClick={generateTestQR}
-                  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
                 >
-                  Generate New Test QR
+                  {testQR ? "Generate New QR Code" : "Generate QR Code"}
                 </button>
               </div>
             </motion.div>

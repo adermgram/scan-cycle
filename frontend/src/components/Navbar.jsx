@@ -32,16 +32,6 @@ const Navbar = ({ isAdmin }) => {
             >
               Dashboard
             </Link>
-            <Link
-              to="/scanner"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/scanner')
-                  ? 'text-emerald-500'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Scanner
-            </Link>
             {isAdmin && (
               <Link
                 to="/admin"
