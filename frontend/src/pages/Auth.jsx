@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const slides = [
   {
@@ -45,7 +46,8 @@ const Auth = ({ onLoginSuccess }) => {
     showConfirmPassword: false
   });
   const [errors, setErrors] = useState({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -62,6 +64,11 @@ const Auth = ({ onLoginSuccess }) => {
       ...prev,
       [name]: value
     }));
+    // Clear errors when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    setApiError('');
   };
 
   const validateForm = () => {
@@ -96,9 +103,8 @@ const Auth = ({ onLoginSuccess }) => {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitted(true);
     const newErrors = validateForm();
 
     if (Object.keys(newErrors).length > 0) {
@@ -106,14 +112,62 @@ const Auth = ({ onLoginSuccess }) => {
       return;
     }
 
-    console.log('Form submitted:', formData);
-    onLoginSuccess();
-    navigate('/dashboard');
+    setIsSubmitting(true);
+    setApiError('');
+
+    try {
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const body = isLogin
+        ? {
+            username: formData.username,
+            password: formData.password,
+          }
+        : {
+            name: formData.fullName,
+            username: formData.username,
+            aadhaar: formData.aadhaarNumber,
+            password: formData.password,
+          };
+
+      console.log('Attempting to connect to:', `http://localhost:5000${endpoint}`);
+      console.log('Request body:', body);
+
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      // Store the token
+      localStorage.setItem('token', data.token);
+      
+      // Call the success callback
+      onLoginSuccess();
+      
+      // Navigate to dashboard
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Authentication error:', error);
+      setApiError(error.message || 'Failed to connect to the server. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Helper function to determine if a field should show error
   const shouldShowError = (fieldName) => {
-    return isSubmitted && errors[fieldName];
+    return errors[fieldName];
   };
 
   return (
@@ -188,6 +242,12 @@ const Auth = ({ onLoginSuccess }) => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {apiError && (
+                  <div className="bg-red-50 text-red-500 p-3 rounded-lg text-sm">
+                    {apiError}
+                  </div>
+                )}
+                
                 {!isLogin && (
                   <div className="space-y-3">
                     <input
@@ -300,18 +360,24 @@ const Auth = ({ onLoginSuccess }) => {
 
                 <button
                   type="submit"
-                  className="w-full bg-emerald-500 text-white py-3 rounded-xl text-base font-medium hover:bg-emerald-600 transition-all transform hover:scale-[1.02] active:scale-[0.98] hover:shadow-lg"
+                  disabled={isSubmitting}
+                  className={`w-full bg-emerald-500 text-white py-3 rounded-xl text-base font-medium transition-all transform hover:scale-[1.02] active:scale-[0.98] hover:shadow-lg ${
+                    isSubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:bg-emerald-600'
+                  }`}
                 >
-                  {isLogin ? 'Sign in' : 'Create account'}
+                  {isSubmitting 
+                    ? (isLogin ? 'Signing in...' : 'Creating account...') 
+                    : (isLogin ? 'Sign in' : 'Create account')}
                 </button>
 
                 <p className="mt-6 text-center text-gray-600">
                   {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
                   <button
+                    type="button"
                     onClick={() => {
                       setIsLogin(!isLogin);
                       setErrors({});
-                      setIsSubmitted(false);
+                      setApiError('');
                       setFormData({
                         fullName: '',
                         username: '',

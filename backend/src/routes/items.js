@@ -106,4 +106,22 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Add this route after your existing routes
+router.get('/test-qr', auth, async (req, res) => {
+  try {
+    // Create a test item
+    const testItem = {
+      id: 'test-' + Date.now(),
+      type: 'plastic',
+      points: 2
+    };
+
+    // Return the test item data that can be used to generate QR code
+    res.json(testItem);
+  } catch (error) {
+    console.error('Error generating test QR:', error);
+    res.status(500).json({ message: 'Error generating test QR code' });
+  }
+});
+
 module.exports = router; 
