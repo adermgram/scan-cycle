@@ -114,6 +114,9 @@ const Dashboard = () => {
 
   // Function to handle leaderboard button click
   const handleLeaderboardClick = () => {
+    if (showScanner) {
+      setShowScanner(false);
+    }
     setShowFullLeaderboard(!showFullLeaderboard);
   };
 
