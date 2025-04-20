@@ -8,6 +8,11 @@ const itemRoutes = require('./routes/items');
 const userRoutes = require('./routes/users');
 const leaderboardRoutes = require('./routes/leaderboard');
 const adminRoutes = require('./routes/admin');
+const notificationRoutes = require('./routes/notifications');
+
+// Debug: Log environment variables
+console.log('MONGODB_URI:', process.env.MONGODB_URI);
+console.log('PORT:', process.env.PORT);
 
 const app = express();
 
@@ -31,12 +36,22 @@ app.use((req, res, next) => {
 });
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch((err) => console.error('MongoDB connection error:', err));
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
+  }
+};
+
+connectDB();
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -44,6 +59,7 @@ app.use('/api/items', itemRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

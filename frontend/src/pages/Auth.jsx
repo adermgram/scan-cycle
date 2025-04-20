@@ -41,6 +41,7 @@ const Auth = ({ onLoginSuccess }) => {
     fullName: '',
     username: '',
     aadhaarNumber: '',
+    address: '',
     password: '',
     confirmPassword: '',
     showPassword: false,
@@ -86,6 +87,10 @@ const Auth = ({ onLoginSuccess }) => {
         newErrors.aadhaarNumber = 'Aadhaar number must be 12 digits';
       }
 
+      if (!formData.address.trim()) {
+        newErrors.address = 'Address is required';
+      }
+
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match';
       }
@@ -127,6 +132,7 @@ const Auth = ({ onLoginSuccess }) => {
             name: formData.fullName,
             username: formData.username,
             aadhaar: formData.aadhaarNumber,
+            address: formData.address,
             password: formData.password,
           };
 
@@ -277,6 +283,19 @@ const Auth = ({ onLoginSuccess }) => {
                     {shouldShowError('aadhaarNumber') && (
                       <p className="mt-1 text-sm text-red-600">{errors.aadhaarNumber}</p>
                     )}
+
+                    <input
+                      id="address"
+                      name="address"
+                      type="text"
+                      value={formData.address}
+                      onChange={handleChange}
+                      className="w-full px-5 py-3 rounded-lg bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Address"
+                    />
+                    {shouldShowError('address') && (
+                      <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+                    )}
                   </div>
                 )}
 
@@ -383,6 +402,7 @@ const Auth = ({ onLoginSuccess }) => {
                         fullName: '',
                         username: '',
                         aadhaarNumber: '',
+                        address: '',
                         password: '',
                         confirmPassword: '',
                         showPassword: false,

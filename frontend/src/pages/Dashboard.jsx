@@ -22,6 +22,8 @@ const Dashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showCongrats, setShowCongrats] = useState(false);
   const [isEmptying, setIsEmptying] = useState(false);
+  const [showCoupon, setShowCoupon] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
   const canvasRef = useRef(null);
 
   // Fetch user profile and leaderboard data
@@ -88,6 +90,35 @@ const Dashboard = () => {
   useEffect(() => {
     if (bottlePoints >= 10 && !showCongrats) {
       setShowCongrats(true);
+      
+      // Send notification to admin
+      const sendNotification = async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/notifications/can-full`, {
+            method: 'POST',
+            headers: {
+              ...getAuthHeader()
+            }
+          });
+
+          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(data.message || 'Failed to send notification');
+          }
+
+          // Show coupon code in modal
+          setCouponCode(data.coupon);
+          setShowCoupon(true);
+          toast.success('Collection team has been notified!');
+        } catch (error) {
+          console.error('Error sending notification:', error);
+          toast.error(error.message || 'Failed to send notification');
+        }
+      };
+
+      sendNotification();
+
       // Start emptying animation after 3 seconds
       setTimeout(() => {
         setIsEmptying(true);
@@ -274,6 +305,32 @@ const Dashboard = () => {
     } catch (err) {
       console.error('Error generating QR code:', err);
       toast.error('Failed to generate QR code');
+    }
+  };
+
+  // Function to handle can full notification
+  const handleCanFull = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/can-full`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send notification');
+      }
+
+      // Show coupon code in modal
+      setCouponCode(data.coupon);
+      setShowCoupon(true);
+      toast.success('Collection team has been notified!');
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      toast.error(error.message || 'Failed to send notification');
     }
   };
 
@@ -648,6 +705,54 @@ const Dashboard = () => {
           </AnimatePresence>
         </motion.div>
       </div>
+
+      {/* Can fill level indicator */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4">Recycling Can Status</h2>
+        <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="absolute top-0 left-0 h-full bg-emerald-500 transition-all duration-500"
+            style={{ width: `${fillLevel}%` }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center text-white font-semibold">
+            {fillLevel}%
+          </div>
+        </div>
+        <button
+          onClick={() => setFillLevel(prev => Math.min(prev + 10, 100))}
+          className="mt-4 bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
+        >
+          Add Items
+        </button>
+        {fillLevel >= 100 && (
+          <button
+            onClick={handleCanFull}
+            className="mt-4 ml-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Notify Collection
+          </button>
+        )}
+      </div>
+
+      {/* Coupon Modal */}
+      {showCoupon && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full">
+            <h2 className="text-2xl font-bold mb-4">Congratulations! 🎉</h2>
+            <p className="mb-4">Your recycling can is full and a collection team will visit you soon.</p>
+            <div className="bg-gray-100 p-4 rounded-lg mb-4">
+              <p className="text-sm text-gray-600 mb-2">Your reward coupon code:</p>
+              <p className="text-xl font-mono font-bold text-emerald-600">{couponCode}</p>
+            </div>
+            <button
+              onClick={() => setShowCoupon(false)}
+              className="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

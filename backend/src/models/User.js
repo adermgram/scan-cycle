@@ -25,6 +25,11 @@ const userSchema = new mongoose.Schema({
       message: 'Aadhaar number must be 12 digits'
     }
   },
+  address: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   password: {
     type: String,
     required: true,
@@ -54,6 +59,8 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, {
+  timestamps: true
 });
 
 // Hash password before saving
