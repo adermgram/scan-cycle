@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { toast } from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
 const DashboardScanner = ({ onScanComplete }) => {
   const [cameras, setCameras] = useState([]);
@@ -100,7 +101,7 @@ const DashboardScanner = ({ onScanComplete }) => {
       
       // Get viewport dimensions
       const isMobile = window.innerWidth < 768;
-      const qrboxSize = isMobile ? 220 : 250;
+      const qrboxSize = isMobile ? 250 : 300;
       
       await html5QrCode.start(
         selectedCamera,
@@ -166,18 +167,18 @@ const DashboardScanner = ({ onScanComplete }) => {
   }, []);
 
   return (
-    <div className="relative w-full h-[300px] md:h-[400px] bg-gray-900 rounded-xl overflow-hidden">
+    <div className="relative w-full h-[350px] md:h-[450px] lg:h-[550px] bg-gray-900 rounded-xl overflow-hidden">
       {/* QR Reader for Html5Qrcode to attach to */}
       <div id="qr-reader" className="w-full h-full">
         {/* Video will be attached here by Html5Qrcode */}
       </div>
       
       {/* Camera Selection and Controls */}
-      <div className="absolute top-0 inset-x-0 p-3 md:p-4 bg-black/70 backdrop-blur-sm space-y-2 md:space-y-3">
+      <div className="absolute top-0 inset-x-0 p-3 md:p-4 bg-black/70 backdrop-blur-sm space-y-2 md:space-y-3 z-20">
         <select
           value={selectedCamera}
           onChange={handleCameraChange}
-          className="w-full p-1.5 md:p-2 text-sm md:text-base bg-gray-800 text-white rounded-lg border border-gray-700"
+          className="w-full p-1.5 md:p-2 text-sm md:text-base bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300"
           disabled={scanning}
         >
           {cameras.map(camera => (
@@ -189,49 +190,126 @@ const DashboardScanner = ({ onScanComplete }) => {
         
         <div className="flex justify-center space-x-3 md:space-x-4">
           {!scanning ? (
-            <button
+            <motion.button
               onClick={startScanner}
-              className="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+              className="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center space-x-2"
               disabled={!selectedCamera}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              Start Camera
-            </button>
+              <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z" />
+              </svg>
+              <span>Start Camera</span>
+            </motion.button>
           ) : (
-            <button
+            <motion.button
               onClick={stopScanner}
-              className="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-red-600 hover:bg-red-700 text-white rounded-lg"
+              className="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center space-x-2"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              Stop Camera
-            </button>
+              <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18,18H6V6H18V18Z" />
+              </svg>
+              <span>Stop Camera</span>
+            </motion.button>
           )}
         </div>
       </div>
 
       {/* Scan Target */}
       {scanning && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="relative w-48 h-48 md:w-64 md:h-64">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <motion.div 
+            className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
             {/* Scanner Target */}
-            <div className="absolute inset-0 border-2 border-emerald-500">
-              <div className="absolute top-0 left-0 w-6 h-6 md:w-8 md:h-8 border-t-2 border-l-2 border-emerald-500"></div>
-              <div className="absolute top-0 right-0 w-6 h-6 md:w-8 md:h-8 border-t-2 border-r-2 border-emerald-500"></div>
-              <div className="absolute bottom-0 left-0 w-6 h-6 md:w-8 md:h-8 border-b-2 border-l-2 border-emerald-500"></div>
-              <div className="absolute bottom-0 right-0 w-6 h-6 md:w-8 md:h-8 border-b-2 border-r-2 border-emerald-500"></div>
+            <div className="absolute inset-0 border-2 border-emerald-500 rounded-lg">
+              {/* Corner markers with animation */}
+              <motion.div 
+                className="absolute top-0 left-0 w-6 h-6 md:w-8 md:h-8 border-t-2 border-l-2 border-emerald-500"
+                animate={{ borderColor: ['rgb(16 185 129)', 'rgb(5 150 105)', 'rgb(16 185 129)'] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <motion.div 
+                className="absolute top-0 right-0 w-6 h-6 md:w-8 md:h-8 border-t-2 border-r-2 border-emerald-500"
+                animate={{ borderColor: ['rgb(16 185 129)', 'rgb(5 150 105)', 'rgb(16 185 129)'] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+              />
+              <motion.div 
+                className="absolute bottom-0 left-0 w-6 h-6 md:w-8 md:h-8 border-b-2 border-l-2 border-emerald-500"
+                animate={{ borderColor: ['rgb(16 185 129)', 'rgb(5 150 105)', 'rgb(16 185 129)'] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+              />
+              <motion.div 
+                className="absolute bottom-0 right-0 w-6 h-6 md:w-8 md:h-8 border-b-2 border-r-2 border-emerald-500"
+                animate={{ borderColor: ['rgb(16 185 129)', 'rgb(5 150 105)', 'rgb(16 185 129)'] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 1.5 }}
+              />
             </div>
             
             {/* Scanning Animation */}
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="w-full h-1 bg-emerald-500/50 animate-scan"></div>
+            <div className="absolute inset-0 overflow-hidden rounded-lg">
+              <motion.div 
+                className="w-full h-1.5 bg-emerald-500/50"
+                animate={{ 
+                  top: ["0%", "100%", "0%"],
+                  boxShadow: [
+                    "0 0 8px rgba(16, 185, 129, 0.4)", 
+                    "0 0 12px rgba(16, 185, 129, 0.6)", 
+                    "0 0 8px rgba(16, 185, 129, 0.4)"
+                  ]
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
             </div>
-          </div>
+            
+            {/* Scan area focus indicators */}
+            <div className="absolute inset-4 border border-dashed border-emerald-400/30 rounded-md"></div>
+            <motion.div 
+              className="absolute inset-0 border-2 border-transparent rounded-lg"
+              animate={{ 
+                boxShadow: [
+                  "0 0 0 rgba(16, 185, 129, 0)", 
+                  "0 0 16px rgba(16, 185, 129, 0.3)", 
+                  "0 0 0 rgba(16, 185, 129, 0)"
+                ]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+          </motion.div>
         </div>
       )}
 
       {/* Instructions */}
-      <div className="absolute bottom-0 inset-x-0 p-3 md:p-4 text-center text-white text-sm md:text-base bg-black/50 backdrop-blur-sm">
-        {!scanning 
-          ? "Click 'Start Camera' to begin scanning" 
-          : "Position the QR code within the frame to scan"}
+      <div className="absolute bottom-0 inset-x-0 p-3 md:p-4 text-center text-white text-sm md:text-base bg-black/50 backdrop-blur-sm z-20">
+        {!scanning ? (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            Click 'Start Camera' to begin scanning
+          </motion.p>
+        ) : (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center justify-center"
+          >
+            <motion.span
+              className="inline-block w-2 h-2 bg-emerald-500 rounded-full mr-2"
+              animate={{ scale: [1, 1.5, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            />
+            Position the QR code within the frame to scan
+          </motion.p>
+        )}
       </div>
     </div>
   );
