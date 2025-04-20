@@ -12,6 +12,7 @@ const Dashboard = () => {
   const [fillLevel, setFillLevel] = useState(0);
   const [leaderboard, setLeaderboard] = useState([]);
   const [userPoints, setUserPoints] = useState(0);
+  const [bottlePoints, setBottlePoints] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
@@ -19,6 +20,8 @@ const Dashboard = () => {
   const [testQR, setTestQR] = useState(null);
   const [qrInfo, setQrInfo] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showCongrats, setShowCongrats] = useState(false);
+  const [isEmptying, setIsEmptying] = useState(false);
   const canvasRef = useRef(null);
 
   // Fetch user profile and leaderboard data
@@ -45,10 +48,10 @@ const Dashboard = () => {
         const profileData = await profileResponse.json();
         setUserPoints(profileData.points);
         setIsAdmin(profileData.isAdmin);
+        setBottlePoints(profileData.bottlePoints || 0); // Load saved bottle points
         
-        // Calculate fill level based on user's points
-        // Using 10 points as maximum (100% full)
-        const calculatedFillLevel = Math.min((profileData.points / 10) * 100, 100);
+        // Calculate fill level based on bottle points
+        const calculatedFillLevel = Math.min((profileData.bottlePoints || 0) / 10 * 100, 100);
         setFillLevel(calculatedFillLevel);
         
         // Fetch leaderboard
@@ -79,6 +82,43 @@ const Dashboard = () => {
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, [navigate]);
+
+  // Add effect to check for full garbage can
+  useEffect(() => {
+    if (bottlePoints >= 10 && !showCongrats) {
+      setShowCongrats(true);
+      // Start emptying animation after 3 seconds
+      setTimeout(() => {
+        setIsEmptying(true);
+        // Reset bottle points and fill level after animation
+        setTimeout(async () => {
+          try {
+            // Update bottle points in database
+            const response = await fetch(`${API_BASE_URL}/api/users/update-bottle`, {
+              method: 'POST',
+              headers: {
+                ...getAuthHeader(),
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ bottlePoints: 0 })
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to update bottle points');
+            }
+
+            setBottlePoints(0);
+            setFillLevel(0);
+            setIsEmptying(false);
+            setShowCongrats(false);
+          } catch (error) {
+            console.error('Error updating bottle points:', error);
+            toast.error('Failed to update bottle points');
+          }
+        }, 2000);
+      }, 3000);
+    }
+  }, [bottlePoints, showCongrats]);
 
   // Function to handle scan completion
   const handleScanComplete = async (data) => {
@@ -119,6 +159,25 @@ const Dashboard = () => {
         icon: '♻️'
       });
 
+      // Update bottle points in database
+      const newBottlePoints = bottlePoints + responseData.points;
+      const bottleResponse = await fetch(`${API_BASE_URL}/api/users/update-bottle`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ bottlePoints: newBottlePoints })
+      });
+
+      if (!bottleResponse.ok) {
+        throw new Error('Failed to update bottle points');
+      }
+
+      // Update local state
+      setBottlePoints(newBottlePoints);
+      setFillLevel((newBottlePoints / 10) * 100);
+
       // Refresh user data to update points
       const profileResponse = await fetch(`${API_BASE_URL}/api/users/profile`, {
         headers: {
@@ -129,8 +188,6 @@ const Dashboard = () => {
       if (profileResponse.ok) {
         const profileData = await profileResponse.json();
         setUserPoints(profileData.points);
-        const calculatedFillLevel = Math.min((profileData.points / 10) * 100, 100);
-        setFillLevel(calculatedFillLevel);
       }
 
       // Close scanner and show success message
@@ -352,16 +409,19 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Fill Animation */}
-              <motion.div 
+                <motion.div 
                   className="absolute bottom-0 w-full transition-all duration-700 ease-in-out"
                   initial={{ height: "0%" }}
-                  animate={{ height: `${fillLevel}%` }}
-                style={{ 
-                  background: `linear-gradient(180deg, 
-                    ${fillLevel > 80 ? '#ef4444' : fillLevel > 50 ? '#eab308' : '#10b981'} 0%,
-                    ${fillLevel > 80 ? '#dc2626' : fillLevel > 50 ? '#ca8a04' : '#059669'} 100%)`
-                }}
-              >
+                  animate={{ 
+                    height: isEmptying ? "0%" : `${fillLevel}%`,
+                    transition: isEmptying ? { duration: 2 } : { duration: 0.7 }
+                  }}
+                  style={{ 
+                    background: `linear-gradient(180deg, 
+                      ${fillLevel > 80 ? '#ef4444' : fillLevel > 50 ? '#eab308' : '#10b981'} 0%,
+                      ${fillLevel > 80 ? '#dc2626' : fillLevel > 50 ? '#ca8a04' : '#059669'} 100%)`
+                  }}
+                >
                   {/* Bubbles Animation */}
                   {fillLevel > 0 && (
                     <>
@@ -395,7 +455,7 @@ const Dashboard = () => {
                   <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white font-bold text-xs md:text-sm lg:text-base drop-shadow-md">
                   {Math.round(fillLevel)}%
                 </div>
-              </motion.div>
+                </motion.div>
               </div>
               
               {/* Bin Outline and Details */}
@@ -428,6 +488,42 @@ const Dashboard = () => {
               </div>
             </div>
             
+            {/* Congratulations Message */}
+            <AnimatePresence>
+              {showCongrats && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-xl shadow-xl text-center z-20"
+                >
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.1, 1],
+                      rotate: [0, 5, -5, 0]
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 1
+                    }}
+                    className="text-4xl md:text-5xl mb-2"
+                  >
+                    🎉
+                  </motion.div>
+                  <h3 className="text-lg md:text-xl font-bold text-emerald-600 mb-2">
+                    Congratulations!
+                  </h3>
+                  <p className="text-sm md:text-base text-gray-600">
+                    You've filled your garbage can!
+                  </p>
+                  <p className="text-xs md:text-sm text-gray-500 mt-1">
+                    Keep up the great recycling work!
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Points Display */}
             {!isAdmin && (
               <div className="absolute bottom-4 lg:bottom-8 text-center bg-white/80 backdrop-blur-sm py-2 px-4 rounded-xl shadow-lg">
