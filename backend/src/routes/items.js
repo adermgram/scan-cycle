@@ -10,12 +10,12 @@ const path = require('path');
 
 // Points configuration for different item types
 const ITEM_POINTS = {
-  plastic: 2,
-  tin: 3,
-  paper: 1,
-  glass: 4,
-  electronics: 5,
-  other: 1
+  plastic: 5,
+  tin: 6,
+  paper: 3,
+  glass: 8,
+  electronics: 15,
+  other: 4
 };
 
 // Generate QR code for a new recyclable item
@@ -105,6 +105,7 @@ router.post('/validate-qr', auth, async (req, res) => {
       // Award points to the user
       const user = await User.findById(req.user._id);
       user.points += parseInt(points);
+      user.bottlePoints = (user.bottlePoints || 0) + parseInt(points);
       await user.save();
       
       return res.json({
@@ -112,6 +113,7 @@ router.post('/validate-qr', auth, async (req, res) => {
         itemType: type,
         points: parseInt(points),
         totalPoints: user.points,
+        bottlePoints: user.bottlePoints,
         message: 'Item recycled successfully'
       });
     }
@@ -160,6 +162,7 @@ router.post('/validate-qr', auth, async (req, res) => {
     // Update user points
     const user = await User.findById(req.user._id);
     user.points += item.points;
+    user.bottlePoints = (user.bottlePoints || 0) + item.points;
     if (!user.recycledItems) {
       user.recycledItems = [];
     }
@@ -171,6 +174,7 @@ router.post('/validate-qr', auth, async (req, res) => {
       itemType: item.type,
       points: item.points,
       totalPoints: user.points,
+      bottlePoints: user.bottlePoints,
       message: 'Item recycled successfully'
     });
   } catch (error) {

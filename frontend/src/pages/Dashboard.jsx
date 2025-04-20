@@ -50,8 +50,9 @@ const Dashboard = () => {
         setIsAdmin(profileData.isAdmin);
         setBottlePoints(profileData.bottlePoints || 0); // Load saved bottle points
         
-        // Calculate fill level based on bottle points
+        // Calculate fill level based on bottle points (10 points = 100% fill)
         const calculatedFillLevel = Math.min((profileData.bottlePoints || 0) / 10 * 100, 100);
+        console.log('Initial fill level calculation:', calculatedFillLevel, 'from bottle points:', profileData.bottlePoints);
         setFillLevel(calculatedFillLevel);
         
         // Fetch leaderboard
@@ -140,6 +141,7 @@ const Dashboard = () => {
       });
 
       const responseData = await response.json();
+      console.log('Response from validate-qr:', responseData);
 
       if (!response.ok) {
         // Handle specific error for already recycled items
@@ -159,36 +161,16 @@ const Dashboard = () => {
         icon: '♻️'
       });
 
-      // Update bottle points in database
-      const newBottlePoints = bottlePoints + responseData.points;
-      const bottleResponse = await fetch(`${API_BASE_URL}/api/users/update-bottle`, {
-        method: 'POST',
-        headers: {
-          ...getAuthHeader(),
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ bottlePoints: newBottlePoints })
-      });
+      // Update bottle points from the response
+      setBottlePoints(responseData.bottlePoints);
+      
+      // Calculate new fill level (10 points = 100% fill)
+      const newFillLevel = Math.min((responseData.bottlePoints / 10) * 100, 100);
+      console.log('Setting fill level to:', newFillLevel, 'from bottle points:', responseData.bottlePoints);
+      setFillLevel(Math.max(0, Math.min(100, newFillLevel))); // Ensure fill level is between 0 and 100
 
-      if (!bottleResponse.ok) {
-        throw new Error('Failed to update bottle points');
-      }
-
-      // Update local state
-      setBottlePoints(newBottlePoints);
-      setFillLevel((newBottlePoints / 10) * 100);
-
-      // Refresh user data to update points
-      const profileResponse = await fetch(`${API_BASE_URL}/api/users/profile`, {
-        headers: {
-          ...getAuthHeader()
-        }
-      });
-
-      if (profileResponse.ok) {
-        const profileData = await profileResponse.json();
-        setUserPoints(profileData.points);
-      }
+      // Update user points
+      setUserPoints(responseData.totalPoints);
 
       // Close scanner and show success message
       setShowScanner(false);
@@ -400,62 +382,29 @@ const Dashboard = () => {
                     ))}
                   </div>
                   
-                  {/* Recycling Symbol */}
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 text-emerald-600/10">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M21.82,15.42L19.32,19.75C18.83,20.61 17.92,21.16 16.93,21.16H15.12C16.37,18.85 18.24,17.18 20.34,16.34L21.82,15.42M15.56,11.13C16.07,11.13 16.5,11.56 16.5,12.06C16.5,12.57 16.07,13 15.56,13C15.05,13 14.62,12.57 14.62,12.06C14.62,11.56 15.05,11.13 15.56,11.13M8.46,11.13C8.96,11.13 9.39,11.56 9.39,12.06C9.39,12.57 8.96,13 8.46,13C7.95,13 7.5,12.57 7.5,12.06C7.5,11.56 7.95,11.13 8.46,11.13M12,17.5C9.5,17.5 7.5,15.5 7.5,13C7.5,10.5 9.5,8.5 12,8.5C14.5,8.5 16.5,10.5 16.5,13C16.5,15.5 14.5,17.5 12,17.5M12,6.5A6.5,6.5 0 0,0 5.5,13A6.5,6.5 0 0,0 12,19.5A6.5,6.5 0 0,0 18.5,13A6.5,6.5 0 0,0 12,6.5Z" />
-                    </svg>
-                  </div>
+                  {/* Fill Animation */}
+                  <motion.div 
+                    className="absolute bottom-0 left-0 right-0 bg-emerald-500"
+                    initial={{ height: "0%" }}
+                    animate={{ 
+                      height: isEmptying ? "0%" : `${Math.max(0, Math.min(100, fillLevel || 0))}%`
+                    }}
+                    transition={{
+                      duration: isEmptying ? 2 : 0.7,
+                      ease: "easeInOut"
+                    }}
+                    style={{ 
+                      background: `linear-gradient(180deg, 
+                        ${fillLevel > 80 ? '#ef4444' : fillLevel > 50 ? '#eab308' : '#10b981'} 0%,
+                        ${fillLevel > 80 ? '#dc2626' : fillLevel > 50 ? '#ca8a04' : '#059669'} 100%)`
+                    }}
+                  >
+                    {/* Fill Level Text */}
+                    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white font-bold text-xs md:text-sm lg:text-base drop-shadow-md">
+                      {Math.round(fillLevel || 0)}%
+                    </div>
+                  </motion.div>
                 </div>
-                
-                {/* Fill Animation */}
-                <motion.div 
-                  className="absolute bottom-0 w-full transition-all duration-700 ease-in-out"
-                  initial={{ height: "0%" }}
-                  animate={{ 
-                    height: isEmptying ? "0%" : `${fillLevel}%`,
-                    transition: isEmptying ? { duration: 2 } : { duration: 0.7 }
-                  }}
-                  style={{ 
-                    background: `linear-gradient(180deg, 
-                      ${fillLevel > 80 ? '#ef4444' : fillLevel > 50 ? '#eab308' : '#10b981'} 0%,
-                      ${fillLevel > 80 ? '#dc2626' : fillLevel > 50 ? '#ca8a04' : '#059669'} 100%)`
-                  }}
-                >
-                  {/* Bubbles Animation */}
-                  {fillLevel > 0 && (
-                    <>
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <motion.div
-                          key={i}
-                          className="absolute w-2 h-2 md:w-3 md:h-3 lg:w-4 lg:h-4 rounded-full bg-white/30"
-                          initial={{ 
-                            x: `${Math.random() * 80 + 10}%`, 
-                            y: `${Math.random() * 20 + 80}%`, 
-                            opacity: 0, 
-                            scale: 0 
-                          }}
-                          animate={{ 
-                            y: ["100%", "0%"],
-                            opacity: [0, 0.7, 0],
-                            scale: [0, 1, 0.5] 
-                          }}
-                          transition={{
-                            duration: 2 + Math.random() * 3,
-                            repeat: Infinity,
-                            delay: i * 0.7,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      ))}
-                    </>
-                  )}
-                  
-                {/* Fill Level Text */}
-                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white font-bold text-xs md:text-sm lg:text-base drop-shadow-md">
-                  {Math.round(fillLevel)}%
-                </div>
-                </motion.div>
               </div>
               
               {/* Bin Outline and Details */}
@@ -544,9 +493,13 @@ const Dashboard = () => {
                   {userPoints}
                 </motion.p>
                 <p className="text-xs lg:text-sm text-gray-500 mt-1">
-                  {userPoints >= 10 
+                  {bottlePoints >= 10 
                     ? "Container full! Keep recycling!" 
-                    : `${10 - userPoints} points until full`}
+                    : `${10 - bottlePoints} points until full`}
+                </p>
+                {/* Debug info */}
+                <p className="text-xs text-gray-400 mt-1">
+                  Fill: {fillLevel}% | Bottle: {bottlePoints}
                 </p>
               </div>
             )}

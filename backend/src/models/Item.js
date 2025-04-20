@@ -18,17 +18,17 @@ const itemSchema = new mongoose.Schema({
       // Set points based on item type
       switch(this.type) {
         case 'plastic':
-          return 2;
+          return 5;
         case 'tin':
-          return 1;
+          return 6;
         case 'paper':
-          return 1;
-        case 'glass':
-          return 1;
-        case 'electronics':
           return 3;
+        case 'glass':
+          return 8;
+        case 'electronics':
+          return 15;
         default:
-          return 1;
+          return 4;
       }
     }
   },

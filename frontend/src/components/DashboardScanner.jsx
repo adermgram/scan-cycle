@@ -101,7 +101,7 @@ const DashboardScanner = ({ onScanComplete }) => {
       
       // Get viewport dimensions
       const isMobile = window.innerWidth < 768;
-      const qrboxSize = isMobile ? 220 : 250;
+      const qrboxSize = isMobile ? 300 : 350;
       
       await html5QrCode.start(
         selectedCamera,
@@ -167,7 +167,7 @@ const DashboardScanner = ({ onScanComplete }) => {
   }, []);
 
   return (
-    <div className="relative w-full h-[300px] md:h-[400px] bg-gray-900 rounded-xl overflow-hidden">
+    <div className="relative w-full h-[400px] md:h-[500px] bg-gray-900 rounded-xl overflow-hidden">
       {/* QR Reader for Html5Qrcode to attach to */}
       <div id="qr-reader" className="w-full h-full">
         {/* Video will be attached here by Html5Qrcode */}
@@ -222,7 +222,7 @@ const DashboardScanner = ({ onScanComplete }) => {
       {scanning && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <motion.div 
-            className="relative w-48 h-48 md:w-64 md:h-64"
+            className="relative w-64 h-64 md:w-80 md:h-80"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
@@ -231,22 +231,22 @@ const DashboardScanner = ({ onScanComplete }) => {
             <div className="absolute inset-0 border-2 border-emerald-500 rounded-lg">
               {/* Corner markers with animation */}
               <motion.div 
-                className="absolute top-0 left-0 w-6 h-6 md:w-8 md:h-8 border-t-2 border-l-2 border-emerald-500"
+                className="absolute top-0 left-0 w-8 h-8 md:w-10 md:h-10 border-t-2 border-l-2 border-emerald-500"
                 animate={{ borderColor: ['rgb(16 185 129)', 'rgb(5 150 105)', 'rgb(16 185 129)'] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
               <motion.div 
-                className="absolute top-0 right-0 w-6 h-6 md:w-8 md:h-8 border-t-2 border-r-2 border-emerald-500"
+                className="absolute top-0 right-0 w-8 h-8 md:w-10 md:h-10 border-t-2 border-r-2 border-emerald-500"
                 animate={{ borderColor: ['rgb(16 185 129)', 'rgb(5 150 105)', 'rgb(16 185 129)'] }}
                 transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
               />
               <motion.div 
-                className="absolute bottom-0 left-0 w-6 h-6 md:w-8 md:h-8 border-b-2 border-l-2 border-emerald-500"
+                className="absolute bottom-0 left-0 w-8 h-8 md:w-10 md:h-10 border-b-2 border-l-2 border-emerald-500"
                 animate={{ borderColor: ['rgb(16 185 129)', 'rgb(5 150 105)', 'rgb(16 185 129)'] }}
                 transition={{ duration: 2, repeat: Infinity, delay: 1 }}
               />
               <motion.div 
-                className="absolute bottom-0 right-0 w-6 h-6 md:w-8 md:h-8 border-b-2 border-r-2 border-emerald-500"
+                className="absolute bottom-0 right-0 w-8 h-8 md:w-10 md:h-10 border-b-2 border-r-2 border-emerald-500"
                 animate={{ borderColor: ['rgb(16 185 129)', 'rgb(5 150 105)', 'rgb(16 185 129)'] }}
                 transition={{ duration: 2, repeat: Infinity, delay: 1.5 }}
               />
@@ -255,7 +255,7 @@ const DashboardScanner = ({ onScanComplete }) => {
             {/* Scanning Animation */}
             <div className="absolute inset-0 overflow-hidden rounded-lg">
               <motion.div 
-                className="w-full h-1.5 bg-emerald-500/50"
+                className="w-full h-2 bg-emerald-500/50"
                 animate={{ 
                   top: ["0%", "100%", "0%"],
                   boxShadow: [
@@ -269,13 +269,13 @@ const DashboardScanner = ({ onScanComplete }) => {
             </div>
             
             {/* Scan area focus indicators */}
-            <div className="absolute inset-4 border border-dashed border-emerald-400/30 rounded-md"></div>
+            <div className="absolute inset-8 border border-dashed border-emerald-400/30 rounded-md"></div>
             <motion.div 
               className="absolute inset-0 border-2 border-transparent rounded-lg"
               animate={{ 
                 boxShadow: [
                   "0 0 0 rgba(16, 185, 129, 0)", 
-                  "0 0 16px rgba(16, 185, 129, 0.3)", 
+                  "0 0 20px rgba(16, 185, 129, 0.3)",
                   "0 0 0 rgba(16, 185, 129, 0)"
                 ]
               }}
