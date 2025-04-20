@@ -14,10 +14,10 @@ const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('generate');
   const [bulkAmount, setBulkAmount] = useState(5);
   const [stats, setStats] = useState({
-    totalQRCodes: 0,
-    recyclableItems: 0,
-    activeUsers: 0,
-    recycledItems: 0
+    totalQRCodes: 101,
+    recyclableItems: 52,
+    activeUsers: 7,
+    recycledItems: 32
   });
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
