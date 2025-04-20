@@ -1,4 +1,4 @@
-# Recycling App
+# ScanCycle
 
 A full-stack application that incentivizes recycling through a points-based reward system. Users can scan QR codes on recyclable items to earn points and receive coupons when their recycling can is full.
 
