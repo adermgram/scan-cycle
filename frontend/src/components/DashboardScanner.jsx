@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 
 const DashboardScanner = ({ onScanComplete }) => {
   const [cameras, setCameras] = useState([]);
@@ -57,11 +57,15 @@ const DashboardScanner = ({ onScanComplete }) => {
         // Process the scanned data
         console.log('Parsed data:', { itemId, type, points });
         
-        // Stop the scanner
-        if (scannerRef.current) {
+        // Only try to stop if we're scanning
+        if (scannerRef.current && scanning) {
           scannerRef.current.stop().catch(error => {
-            console.error('Error stopping scanner:', error);
+            // Only log real errors, not the expected "scanner not running" errors
+            if (!error.message?.includes('scanner is not running')) {
+              console.error('Error stopping scanner:', error);
+            }
           });
+          setScanning(false);
         }
         
         // Call the callback with the parsed data
@@ -78,7 +82,7 @@ const DashboardScanner = ({ onScanComplete }) => {
         toast.error(error.message || 'Invalid QR code format');
       }
     }
-  }, [onScanComplete]);
+  }, [onScanComplete, scanning]);
 
   // Start scanning
   const startScanner = async () => {
@@ -94,11 +98,16 @@ const DashboardScanner = ({ onScanComplete }) => {
       const html5QrCode = new Html5Qrcode("qr-reader");
       scannerRef.current = html5QrCode;
       
+      // Get viewport dimensions
+      const isMobile = window.innerWidth < 768;
+      const qrboxSize = isMobile ? 220 : 250;
+      
       await html5QrCode.start(
         selectedCamera,
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 }
+          qrbox: { width: qrboxSize, height: qrboxSize },
+          aspectRatio: 1
         },
         handleScanSuccess,
         (errorMessage) => {
@@ -126,13 +135,18 @@ const DashboardScanner = ({ onScanComplete }) => {
 
   // Stop scanning
   const stopScanner = async () => {
-    if (scannerRef.current) {
+    if (scannerRef.current && scanning) {
       try {
         await scannerRef.current.stop();
         setScanning(false);
         toast.info('Scanner stopped');
       } catch (error) {
-        console.error('Error stopping scanner:', error);
+        // Only log real errors, not the expected "scanner not running" errors
+        if (!error.message?.includes('scanner is not running')) {
+          console.error('Error stopping scanner:', error);
+        }
+        // Always update the state even if there's an error
+        setScanning(false);
       }
     }
   };
@@ -142,25 +156,28 @@ const DashboardScanner = ({ onScanComplete }) => {
     return () => {
       if (scannerRef.current) {
         scannerRef.current.stop().catch(error => {
-          console.error('Failed to stop scanner on cleanup:', error);
+          // Only log real errors, not the expected "scanner not running" errors
+          if (!error.message?.includes('scanner is not running')) {
+            console.error('Failed to stop scanner on cleanup:', error);
+          }
         });
       }
     };
   }, []);
 
   return (
-    <div className="relative w-full h-[400px] bg-gray-900 rounded-xl overflow-hidden">
+    <div className="relative w-full h-[300px] md:h-[400px] bg-gray-900 rounded-xl overflow-hidden">
       {/* QR Reader for Html5Qrcode to attach to */}
       <div id="qr-reader" className="w-full h-full">
         {/* Video will be attached here by Html5Qrcode */}
       </div>
       
       {/* Camera Selection and Controls */}
-      <div className="absolute top-0 inset-x-0 p-4 bg-black/70 backdrop-blur-sm space-y-3">
+      <div className="absolute top-0 inset-x-0 p-3 md:p-4 bg-black/70 backdrop-blur-sm space-y-2 md:space-y-3">
         <select
           value={selectedCamera}
           onChange={handleCameraChange}
-          className="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700"
+          className="w-full p-1.5 md:p-2 text-sm md:text-base bg-gray-800 text-white rounded-lg border border-gray-700"
           disabled={scanning}
         >
           {cameras.map(camera => (
@@ -170,11 +187,11 @@ const DashboardScanner = ({ onScanComplete }) => {
           ))}
         </select>
         
-        <div className="flex justify-center space-x-4">
+        <div className="flex justify-center space-x-3 md:space-x-4">
           {!scanning ? (
             <button
               onClick={startScanner}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+              className="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
               disabled={!selectedCamera}
             >
               Start Camera
@@ -182,7 +199,7 @@ const DashboardScanner = ({ onScanComplete }) => {
           ) : (
             <button
               onClick={stopScanner}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+              className="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-red-600 hover:bg-red-700 text-white rounded-lg"
             >
               Stop Camera
             </button>
@@ -193,13 +210,13 @@ const DashboardScanner = ({ onScanComplete }) => {
       {/* Scan Target */}
       {scanning && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="relative w-64 h-64">
+          <div className="relative w-48 h-48 md:w-64 md:h-64">
             {/* Scanner Target */}
             <div className="absolute inset-0 border-2 border-emerald-500">
-              <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-emerald-500"></div>
-              <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-emerald-500"></div>
-              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-emerald-500"></div>
-              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-emerald-500"></div>
+              <div className="absolute top-0 left-0 w-6 h-6 md:w-8 md:h-8 border-t-2 border-l-2 border-emerald-500"></div>
+              <div className="absolute top-0 right-0 w-6 h-6 md:w-8 md:h-8 border-t-2 border-r-2 border-emerald-500"></div>
+              <div className="absolute bottom-0 left-0 w-6 h-6 md:w-8 md:h-8 border-b-2 border-l-2 border-emerald-500"></div>
+              <div className="absolute bottom-0 right-0 w-6 h-6 md:w-8 md:h-8 border-b-2 border-r-2 border-emerald-500"></div>
             </div>
             
             {/* Scanning Animation */}
@@ -211,7 +228,7 @@ const DashboardScanner = ({ onScanComplete }) => {
       )}
 
       {/* Instructions */}
-      <div className="absolute bottom-0 inset-x-0 p-4 text-center text-white bg-black/50 backdrop-blur-sm">
+      <div className="absolute bottom-0 inset-x-0 p-3 md:p-4 text-center text-white text-sm md:text-base bg-black/50 backdrop-blur-sm">
         {!scanning 
           ? "Click 'Start Camera' to begin scanning" 
           : "Position the QR code within the frame to scan"}

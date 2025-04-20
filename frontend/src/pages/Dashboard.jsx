@@ -253,19 +253,19 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex justify-center">
-      <div className="w-full flex">
+    <div className="min-h-screen bg-white">
+      <div className="w-full flex flex-col lg:flex-row">
         {/* Left Side - Garbage Visualization */}
         <motion.div 
-          initial={{ x: -100, opacity: 0 }}
+          initial={{ x: -50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-[55%] p-8"
+          className="w-full lg:w-[55%] p-4 lg:p-8"
         >
-          <h2 className="text-2xl font-bold mb-6 text-gray-800">Your Recycling Progress</h2>
-          <div className="relative h-[80vh] flex items-center justify-center bg-gray-50 rounded-3xl shadow-lg">
+          <h2 className="text-xl lg:text-2xl font-bold mb-4 lg:mb-6 text-gray-800">Your Recycling Progress</h2>
+          <div className="relative h-[30vh] md:h-[40vh] lg:h-[80vh] flex items-center justify-center bg-gray-50 rounded-2xl lg:rounded-3xl shadow-lg">
             {/* Garbage Bin */}
-            <div className="relative w-64 h-96">
+            <div className="relative w-32 h-52 md:w-40 md:h-64 lg:w-64 lg:h-96">
               {/* Bin Body */}
               <motion.div 
                 className="absolute bottom-0 w-full bg-emerald-500 rounded-lg shadow-lg transition-all duration-300"
@@ -277,7 +277,7 @@ const Dashboard = () => {
                 }}
               >
                 {/* Fill Level Text */}
-                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white font-bold">
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white font-bold text-xs md:text-sm lg:text-base">
                   {Math.round(fillLevel)}%
                 </div>
               </motion.div>
@@ -290,15 +290,15 @@ const Dashboard = () => {
                   transition={{ type: "spring", stiffness: 300 }}
                 />
                 {/* Wheels */}
-                <div className="absolute -bottom-2 left-4 w-4 h-4 bg-gray-700 rounded-full" />
-                <div className="absolute -bottom-2 right-4 w-4 h-4 bg-gray-700 rounded-full" />
+                <div className="absolute -bottom-2 left-4 w-2 h-2 md:w-3 md:h-3 lg:w-4 lg:h-4 bg-gray-700 rounded-full" />
+                <div className="absolute -bottom-2 right-4 w-2 h-2 md:w-3 md:h-3 lg:w-4 lg:h-4 bg-gray-700 rounded-full" />
               </div>
             </div>
             {/* Points Display */}
-            <div className="absolute bottom-8 text-center">
-              <p className="text-gray-600 text-lg">Your Points</p>
-              <p className="text-4xl font-bold text-emerald-600">{userPoints}</p>
-              <p className="text-sm text-gray-500 mt-1">
+            <div className="absolute bottom-4 lg:bottom-8 text-center">
+              <p className="text-gray-600 text-sm md:text-base lg:text-lg">Your Points</p>
+              <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-emerald-600">{userPoints}</p>
+              <p className="text-xs lg:text-sm text-gray-500 mt-1">
                 {userPoints >= 10 
                   ? "Container full! Keep recycling!" 
                   : `${10 - userPoints} points until full`}
@@ -309,28 +309,28 @@ const Dashboard = () => {
 
         {/* Right Side - QR Scanner & Leaderboard */}
         <motion.div 
-          initial={{ x: 100, opacity: 0 }}
+          initial={{ x: 50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-[45%] p-8 bg-gray-50"
+          className="w-full lg:w-[45%] p-4 lg:p-8 bg-gray-50"
         >
           {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowScanner(!showScanner)}
-              className={`${showScanner ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white rounded-xl p-4 shadow-lg flex items-center justify-center space-x-2 transition-colors`}
+              className={`${showScanner ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white rounded-xl p-2 md:p-3 lg:p-4 shadow-lg flex items-center justify-center space-x-1 md:space-x-2 transition-colors`}
             >
               {showScanner ? (
                 <>
-                  <FaTimes className="h-6 w-6" />
-                  <span>Close Scanner</span>
+                  <FaTimes className="h-3 w-3 md:h-4 md:w-4 lg:h-6 lg:w-6" />
+                  <span className="text-xs md:text-sm lg:text-base">Close Scanner</span>
                 </>
               ) : (
                 <>
-                  <FaQrcode className="h-6 w-6" />
-                  <span>Scan QR</span>
+                  <FaQrcode className="h-3 w-3 md:h-4 md:w-4 lg:h-6 lg:w-6" />
+                  <span className="text-xs md:text-sm lg:text-base">Scan QR</span>
                 </>
               )}
             </motion.button>
@@ -339,12 +339,12 @@ const Dashboard = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleLeaderboardClick}
-              className={`text-white rounded-xl p-4 shadow-lg flex items-center justify-center space-x-2 transition-colors ${
+              className={`text-white rounded-xl p-2 md:p-3 lg:p-4 shadow-lg flex items-center justify-center space-x-1 md:space-x-2 transition-colors ${
                 showFullLeaderboard ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-500 hover:bg-blue-600'
               }`}
             >
-              <FaTrophy className="h-6 w-6" />
-              <span>{showFullLeaderboard ? 'Show Less' : 'Full Leaderboard'}</span>
+              <FaTrophy className="h-3 w-3 md:h-4 md:w-4 lg:h-6 lg:w-6" />
+              <span className="text-xs md:text-sm lg:text-base">{showFullLeaderboard ? 'Show Less' : 'Full Leaderboard'}</span>
             </motion.button>
           </div>
 
@@ -366,31 +366,31 @@ const Dashboard = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="bg-white rounded-2xl p-6 shadow-lg"
+                className="bg-white rounded-2xl p-3 md:p-4 lg:p-6 shadow-lg"
               >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold">Top Recyclers</h3>
-                  <span className="text-sm text-gray-500">Updated live</span>
+                <div className="flex items-center justify-between mb-3 md:mb-4 lg:mb-6">
+                  <h3 className="text-base md:text-lg lg:text-xl font-semibold">Top Recyclers</h3>
+                  <span className="text-xs lg:text-sm text-gray-500">Updated live</span>
                 </div>
-                <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                <div className="space-y-2 md:space-y-3 lg:space-y-4 max-h-[250px] md:max-h-[300px] lg:max-h-[500px] overflow-y-auto">
                   {leaderboard.slice(0, showFullLeaderboard ? undefined : 5).map((user, index) => (
                     <motion.div
                       key={user._id || index}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                      className="flex items-center justify-between p-2 md:p-3 lg:p-4 bg-gray-50 rounded-xl"
                     >
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-2xl">
+                      <div className="flex items-center space-x-2 md:space-x-3 lg:space-x-4">
+                        <div className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 bg-emerald-100 rounded-full flex items-center justify-center text-lg md:text-xl lg:text-2xl">
                           {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🌟'}
                         </div>
                         <div>
-                          <p className="font-medium text-black">{user.name || user.username}</p>
-                          <p className="text-sm text-gray-500">{user.points} points</p>
+                          <p className="font-medium text-black text-xs md:text-sm lg:text-base">{user.name || user.username}</p>
+                          <p className="text-xs lg:text-sm text-gray-500">{user.points} points</p>
                         </div>
                       </div>
-                      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-xs lg:text-base">
                         {index + 1}
                       </div>
                     </motion.div>
@@ -405,25 +405,25 @@ const Dashboard = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-6 bg-white rounded-2xl p-6 shadow-lg"
+              className="mt-4 lg:mt-6 bg-white rounded-2xl p-3 md:p-4 lg:p-6 shadow-lg"
             >
-              <h3 className="text-lg font-semibold mb-4">Generate Test QR Code</h3>
+              <h3 className="text-sm md:text-base lg:text-lg font-semibold mb-2 md:mb-3 lg:mb-4">Generate Test QR Code</h3>
               <div className="flex flex-col items-center">
                 {/* Hidden canvas for QR code generation and download */}
                 <canvas ref={canvasRef} className="hidden" width="300" height="300"></canvas>
                 
                 {testQR && (
                   <>
-                    <div className="bg-white p-4 rounded-lg shadow-md mb-4">
-                      <img src={testQR} alt="Test QR Code" className="w-64 h-64" />
+                    <div className="bg-white p-2 md:p-3 lg:p-4 rounded-lg shadow-md mb-2 md:mb-3 lg:mb-4">
+                      <img src={testQR} alt="Test QR Code" className="w-32 h-32 md:w-48 md:h-48 lg:w-64 lg:h-64" />
                     </div>
                     
                     {qrInfo && (
-                      <div className="bg-gray-50 p-3 rounded-lg mb-4 w-full text-center">
-                        <p className="text-sm text-gray-700">ID: <span className="font-mono">{qrInfo.itemId}</span></p>
-                        <p className="text-sm text-gray-700">Type: <span className="font-medium text-emerald-600">{qrInfo.type}</span></p>
-                        <p className="text-sm text-gray-700">Points: <span className="font-bold">{qrInfo.points}</span></p>
-                        <div className="mt-2 text-xs bg-amber-50 p-2 rounded border border-amber-200 text-amber-800">
+                      <div className="bg-gray-50 p-2 md:p-2 lg:p-3 rounded-lg mb-2 md:mb-3 lg:mb-4 w-full text-center">
+                        <p className="text-xs lg:text-sm text-gray-700">ID: <span className="font-mono">{qrInfo.itemId}</span></p>
+                        <p className="text-xs lg:text-sm text-gray-700">Type: <span className="font-medium text-emerald-600">{qrInfo.type}</span></p>
+                        <p className="text-xs lg:text-sm text-gray-700">Points: <span className="font-bold">{qrInfo.points}</span></p>
+                        <div className="mt-1 md:mt-2 text-xs bg-amber-50 p-1 md:p-2 rounded border border-amber-200 text-amber-800">
                           <span className="font-medium">⚠️ One-Time Use Only:</span> This QR code can only be recycled once.
                         </div>
                       </div>
@@ -431,9 +431,9 @@ const Dashboard = () => {
                     
                     <button 
                       onClick={handleDownloadQR}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-4 flex items-center space-x-2"
+                      className="px-2 py-1 md:px-3 md:py-2 lg:px-4 lg:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-2 md:mb-3 lg:mb-4 flex items-center space-x-1 md:space-x-2 text-xs md:text-sm lg:text-base"
                     >
-                      <FaDownload className="h-4 w-4" />
+                      <FaDownload className="h-3 w-3 lg:h-4 lg:w-4" />
                       <span>Download QR Code</span>
                     </button>
                   </>
@@ -441,7 +441,7 @@ const Dashboard = () => {
                 
                 <button
                   onClick={generateTestQR}
-                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                  className="px-2 py-1 md:px-3 md:py-2 lg:px-4 lg:py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-xs md:text-sm lg:text-base"
                 >
                   {testQR ? "Generate New QR Code" : "Generate QR Code"}
                 </button>
