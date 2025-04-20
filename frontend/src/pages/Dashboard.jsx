@@ -98,7 +98,7 @@ const Dashboard = () => {
       });
 
       const responseData = await response.json();
-      
+
       if (!response.ok) {
         // Handle specific error for already recycled items
         if (responseData.isUsed) {
@@ -350,16 +350,16 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Fill Animation */}
-                <motion.div 
+              <motion.div 
                   className="absolute bottom-0 w-full transition-all duration-700 ease-in-out"
                   initial={{ height: "0%" }}
                   animate={{ height: `${fillLevel}%` }}
-                  style={{ 
-                    background: `linear-gradient(180deg, 
-                      ${fillLevel > 80 ? '#ef4444' : fillLevel > 50 ? '#eab308' : '#10b981'} 0%,
-                      ${fillLevel > 80 ? '#dc2626' : fillLevel > 50 ? '#ca8a04' : '#059669'} 100%)`
-                  }}
-                >
+                style={{ 
+                  background: `linear-gradient(180deg, 
+                    ${fillLevel > 80 ? '#ef4444' : fillLevel > 50 ? '#eab308' : '#10b981'} 0%,
+                    ${fillLevel > 80 ? '#dc2626' : fillLevel > 50 ? '#ca8a04' : '#059669'} 100%)`
+                }}
+              >
                   {/* Bubbles Animation */}
                   {fillLevel > 0 && (
                     <>
@@ -389,11 +389,11 @@ const Dashboard = () => {
                     </>
                   )}
                   
-                  {/* Fill Level Text */}
+                {/* Fill Level Text */}
                   <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white font-bold text-xs md:text-sm lg:text-base drop-shadow-md">
-                    {Math.round(fillLevel)}%
-                  </div>
-                </motion.div>
+                  {Math.round(fillLevel)}%
+                </div>
+              </motion.div>
               </div>
               
               {/* Bin Outline and Details */}
@@ -503,7 +503,6 @@ const Dashboard = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 className="bg-white rounded-2xl overflow-hidden shadow-lg"
-                style={{ minHeight: '350px' }}
               >
                 <DashboardScanner onScanComplete={handleScanComplete} />
               </motion.div>

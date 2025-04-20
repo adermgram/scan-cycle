@@ -101,7 +101,7 @@ const DashboardScanner = ({ onScanComplete }) => {
       
       // Get viewport dimensions
       const isMobile = window.innerWidth < 768;
-      const qrboxSize = isMobile ? 250 : 300;
+      const qrboxSize = isMobile ? 220 : 250;
       
       await html5QrCode.start(
         selectedCamera,
@@ -167,7 +167,7 @@ const DashboardScanner = ({ onScanComplete }) => {
   }, []);
 
   return (
-    <div className="relative w-full h-[350px] md:h-[450px] lg:h-[550px] bg-gray-900 rounded-xl overflow-hidden">
+    <div className="relative w-full h-[300px] md:h-[400px] bg-gray-900 rounded-xl overflow-hidden">
       {/* QR Reader for Html5Qrcode to attach to */}
       <div id="qr-reader" className="w-full h-full">
         {/* Video will be attached here by Html5Qrcode */}
@@ -222,7 +222,7 @@ const DashboardScanner = ({ onScanComplete }) => {
       {scanning && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <motion.div 
-            className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96"
+            className="relative w-48 h-48 md:w-64 md:h-64"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
