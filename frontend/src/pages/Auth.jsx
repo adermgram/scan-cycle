@@ -156,8 +156,8 @@ const Auth = ({ onLoginSuccess }) => {
       // Call the success callback with admin status
       onLoginSuccess(data.user.isAdmin);
       
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Navigate to appropriate dashboard based on admin status
+      navigate(data.user.isAdmin ? '/admin' : '/dashboard');
     } catch (error) {
       console.error('Authentication error:', error);
       setApiError(error.message || 'Failed to connect to the server. Please try again.');

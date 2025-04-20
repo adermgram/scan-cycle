@@ -53,13 +53,23 @@ function App() {
                 !isAuthenticated ? (
                   <Auth onLoginSuccess={handleLoginSuccess} />
                 ) : (
-                  <Navigate to="/dashboard" />
+                  <Navigate to={isAdmin ? "/admin" : "/dashboard"} />
                 )
               } 
             />
             <Route
               path="/dashboard"
-              element={isAuthenticated ? <Dashboard /> : <Navigate to="/" />}
+              element={
+                isAuthenticated ? (
+                  isAdmin ? (
+                    <Navigate to="/admin" />
+                  ) : (
+                    <Dashboard />
+                  )
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
             />
             <Route
               path="/admin"

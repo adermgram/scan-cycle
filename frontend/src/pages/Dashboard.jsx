@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
   const [testQR, setTestQR] = useState(null);
   const [qrInfo, setQrInfo] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const canvasRef = useRef(null);
 
   // Fetch user profile and leaderboard data
@@ -43,6 +44,7 @@ const Dashboard = () => {
 
         const profileData = await profileResponse.json();
         setUserPoints(profileData.points);
+        setIsAdmin(profileData.isAdmin);
         
         // Calculate fill level based on user's points
         // Using 10 points as maximum (100% full)
@@ -427,29 +429,31 @@ const Dashboard = () => {
             </div>
             
             {/* Points Display */}
-            <div className="absolute bottom-4 lg:bottom-8 text-center bg-white/80 backdrop-blur-sm py-2 px-4 rounded-xl shadow-lg">
-              <motion.p 
-                className="text-gray-600 text-sm md:text-base lg:text-lg"
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                Your Points
-              </motion.p>
-              <motion.p 
-                className="text-2xl md:text-3xl lg:text-4xl font-bold text-emerald-600"
-                key={userPoints} // Trigger animation when points change
-                initial={{ scale: 1.2, y: -10 }}
-                animate={{ scale: 1, y: 0 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                {userPoints}
-              </motion.p>
-              <p className="text-xs lg:text-sm text-gray-500 mt-1">
-                {userPoints >= 10 
-                  ? "Container full! Keep recycling!" 
-                  : `${10 - userPoints} points until full`}
-              </p>
-            </div>
+            {!isAdmin && (
+              <div className="absolute bottom-4 lg:bottom-8 text-center bg-white/80 backdrop-blur-sm py-2 px-4 rounded-xl shadow-lg">
+                <motion.p 
+                  className="text-gray-600 text-sm md:text-base lg:text-lg"
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  Your Points
+                </motion.p>
+                <motion.p 
+                  className="text-2xl md:text-3xl lg:text-4xl font-bold text-emerald-600"
+                  key={userPoints} // Trigger animation when points change
+                  initial={{ scale: 1.2, y: -10 }}
+                  animate={{ scale: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  {userPoints}
+                </motion.p>
+                <p className="text-xs lg:text-sm text-gray-500 mt-1">
+                  {userPoints >= 10 
+                    ? "Container full! Keep recycling!" 
+                    : `${10 - userPoints} points until full`}
+                </p>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -461,38 +465,40 @@ const Dashboard = () => {
           className="w-full lg:w-[45%] p-4 lg:p-8 bg-gray-50"
         >
           {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowScanner(!showScanner)}
-              className={`${showScanner ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white rounded-xl p-2 md:p-3 lg:p-4 shadow-lg flex items-center justify-center space-x-1 md:space-x-2 transition-colors`}
-            >
-              {showScanner ? (
-                <>
-                  <FaTimes className="h-3 w-3 md:h-4 md:w-4 lg:h-6 lg:w-6" />
-                  <span className="text-xs md:text-sm lg:text-base">Close Scanner</span>
-                </>
-              ) : (
-                <>
-                  <FaQrcode className="h-3 w-3 md:h-4 md:w-4 lg:h-6 lg:w-6" />
-                  <span className="text-xs md:text-sm lg:text-base">Scan QR</span>
-                </>
-              )}
-            </motion.button>
+          {!isAdmin && (
+            <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowScanner(!showScanner)}
+                className={`${showScanner ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white rounded-xl p-2 md:p-3 lg:p-4 shadow-lg flex items-center justify-center space-x-1 md:space-x-2 transition-colors`}
+              >
+                {showScanner ? (
+                  <>
+                    <FaTimes className="h-3 w-3 md:h-4 md:w-4 lg:h-6 lg:w-6" />
+                    <span className="text-xs md:text-sm lg:text-base">Close Scanner</span>
+                  </>
+                ) : (
+                  <>
+                    <FaQrcode className="h-3 w-3 md:h-4 md:w-4 lg:h-6 lg:w-6" />
+                    <span className="text-xs md:text-sm lg:text-base">Scan QR</span>
+                  </>
+                )}
+              </motion.button>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleLeaderboardClick}
-              className={`text-white rounded-xl p-2 md:p-3 lg:p-4 shadow-lg flex items-center justify-center space-x-1 md:space-x-2 transition-colors ${
-                showFullLeaderboard ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-500 hover:bg-blue-600'
-              }`}
-            >
-              <FaTrophy className="h-3 w-3 md:h-4 md:w-4 lg:h-6 lg:w-6" />
-              <span className="text-xs md:text-sm lg:text-base">{showFullLeaderboard ? 'Show Less' : 'Full Leaderboard'}</span>
-            </motion.button>
-          </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleLeaderboardClick}
+                className={`text-white rounded-xl p-2 md:p-3 lg:p-4 shadow-lg flex items-center justify-center space-x-1 md:space-x-2 transition-colors ${
+                  showFullLeaderboard ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-500 hover:bg-blue-600'
+                }`}
+              >
+                <FaTrophy className="h-3 w-3 md:h-4 md:w-4 lg:h-6 lg:w-6" />
+                <span className="text-xs md:text-sm lg:text-base">{showFullLeaderboard ? 'Show Less' : 'Full Leaderboard'}</span>
+              </motion.button>
+            </div>
+          )}
 
           {/* Content Area - Toggle between Scanner and Leaderboard */}
           <AnimatePresence mode="wait">
@@ -591,143 +597,6 @@ const Dashboard = () => {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Test QR Code Section */}
-          {!showScanner && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 lg:mt-6 bg-white rounded-2xl p-3 md:p-4 lg:p-6 shadow-lg"
-            >
-              <h3 className="text-sm md:text-base lg:text-lg font-semibold mb-2 md:mb-3 lg:mb-4 flex items-center">
-                <motion.span
-                  animate={{ rotate: [0, 0, -5, 0, 5, 0] }}
-                  transition={{ duration: 5, repeat: Infinity, repeatDelay: 3 }}
-                  className="mr-2 text-emerald-500"
-                >
-                  <svg className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 11H5V13H3V11M11 11H13V13H11V11M19 11H21V13H19V11M3 7H5V9H3V7M11 7H13V9H11V7M19 7H21V9H19V7M3 15H5V17H3V15M11 15H13V17H11V15M19 15H21V17H19V15M3 3H9V9H3V3M5 5V7H7V5H5M11 3H17V9H11V3M13 5V7H15V5H13M19 3H21V5H19V3M19 19H21V21H19V19M13 11H15V15H17V11H19V9H15V7H13V9H11V11H13M13 19H17V17H19V15H17V13H15V15H13V19M3 11H9V17H3V11M5 13V15H7V13H5Z" />
-                  </svg>
-                </motion.span>
-                Generate Test QR Code
-              </h3>
-              <div className="flex flex-col items-center">
-                {/* Hidden canvas for QR code generation and download */}
-                <canvas ref={canvasRef} className="hidden" width="300" height="300"></canvas>
-                
-                {testQR && (
-                  <>
-                    <div className="bg-white p-2 md:p-3 lg:p-4 rounded-lg shadow-md mb-2 md:mb-3 lg:mb-4 relative overflow-hidden">
-                      {/* Scanner line animation */}
-                      <motion.div 
-                        className="absolute top-0 left-0 w-full h-1 bg-emerald-500/50 z-10" 
-                        animate={{ top: ["0%", "100%", "0%"] }}
-                        transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                      />
-                      <img src={testQR} alt="Test QR Code" className="w-32 h-32 md:w-48 md:h-48 lg:w-64 lg:h-64 relative z-0" />
-                      
-                      {/* Corner markers for QR look */}
-                      <div className="absolute top-2 left-2 w-4 h-4 md:w-6 md:h-6 border-t-2 border-l-2 border-emerald-500"></div>
-                      <div className="absolute top-2 right-2 w-4 h-4 md:w-6 md:h-6 border-t-2 border-r-2 border-emerald-500"></div>
-                      <div className="absolute bottom-2 left-2 w-4 h-4 md:w-6 md:h-6 border-b-2 border-l-2 border-emerald-500"></div>
-                      <div className="absolute bottom-2 right-2 w-4 h-4 md:w-6 md:h-6 border-b-2 border-r-2 border-emerald-500"></div>
-                    </div>
-                    
-                    {qrInfo && (
-                      <motion.div 
-                        className="bg-gray-50 p-2 md:p-2 lg:p-3 rounded-lg mb-2 md:mb-3 lg:mb-4 w-full text-center"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        <div className="grid grid-cols-3 gap-1 md:gap-2">
-                          <div className="bg-gray-100 p-1 md:p-2 rounded">
-                            <p className="text-xs text-gray-500">ID</p>
-                            <p className="font-mono text-xs truncate">{qrInfo.itemId}</p>
-                          </div>
-                          <div className="bg-emerald-50 p-1 md:p-2 rounded">
-                            <p className="text-xs text-gray-500">Type</p>
-                            <p className="font-medium text-emerald-600 text-xs md:text-sm">{qrInfo.type}</p>
-                          </div>
-                          <div className="bg-blue-50 p-1 md:p-2 rounded">
-                            <p className="text-xs text-gray-500">Points</p>
-                            <motion.p 
-                              className="font-bold text-blue-600 text-xs md:text-sm"
-                              animate={{ scale: [1, 1.1, 1] }}
-                              transition={{ duration: 1, repeat: Infinity, repeatDelay: 2 }}
-                            >
-                              {qrInfo.points}
-                            </motion.p>
-                          </div>
-                        </div>
-                        <motion.div 
-                          className="mt-1 md:mt-2 text-xs bg-amber-50 p-1 md:p-2 rounded border border-amber-200 text-amber-800"
-                          animate={{ 
-                            boxShadow: ['0 0 0 rgba(217, 119, 6, 0)', '0 0 8px rgba(217, 119, 6, 0.3)', '0 0 0 rgba(217, 119, 6, 0)']
-                          }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <span className="font-medium">⚠️ One-Time Use Only:</span> This QR code can only be recycled once.
-                        </motion.div>
-                      </motion.div>
-                    )}
-                    
-                    <motion.button 
-                      onClick={handleDownloadQR}
-                      className="px-2 py-1 md:px-3 md:py-2 lg:px-4 lg:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-2 md:mb-3 lg:mb-4 flex items-center space-x-1 md:space-x-2 text-xs md:text-sm lg:text-base group"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      <motion.span
-                        animate={{ y: [0, -2, 0] }}
-                        transition={{ repeat: Infinity, duration: 1.5 }}
-                      >
-                        <FaDownload className="h-3 w-3 lg:h-4 lg:w-4 group-hover:text-blue-200 transition-colors" />
-                      </motion.span>
-                      <span>Download QR Code</span>
-                    </motion.button>
-                  </>
-                )}
-                
-                <motion.button
-                  onClick={generateTestQR}
-                  className="px-2 py-1 md:px-3 md:py-2 lg:px-4 lg:py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-xs md:text-sm lg:text-base"
-                  whileHover={{ scale: 1.05, boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <span className="flex items-center justify-center">
-                    {testQR ? (
-                      <>
-                        <motion.svg 
-                          className="w-4 h-4 mr-2" 
-                          viewBox="0 0 24 24" 
-                          fill="currentColor"
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        >
-                          <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" />
-                        </motion.svg>
-                        Generate New QR Code
-                      </>
-                    ) : (
-                      <>
-                        <motion.svg 
-                          className="w-4 h-4 mr-2" 
-                          viewBox="0 0 24 24" 
-                          fill="currentColor"
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                        >
-                          <path d="M3 11H5V13H3V11M11 11H13V13H11V11M19 11H21V13H19V11M3 7H5V9H3V7M11 7H13V9H11V7M19 7H21V9H19V7M3 15H5V17H3V15M11 15H13V17H11V15M19 15H21V17H19V15M3 3H9V9H3V3M5 5V7H7V5H5M11 3H17V9H11V3M13 5V7H15V5H13M19 3H21V5H19V3M19 19H21V21H19V19M13 11H15V15H17V11H19V9H15V7H13V9H11V11H13M13 19H17V17H19V15H17V13H15V15H13V19M3 11H9V17H3V11M5 13V15H7V13H5Z" />
-                        </motion.svg>
-                        Generate QR Code
-                      </>
-                    )}
-                  </span>
-                </motion.button>
-              </div>
-            </motion.div>
-          )}
         </motion.div>
       </div>
     </div>
