@@ -56,8 +56,8 @@ NODE_ENV=development
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/recycling-app.git
-cd recycling-app
+git clone https://github.com/jallow13/Byte-of-Africa.git
+cd Byte-of-Africa
 ```
 
 2. Install frontend dependencies:
